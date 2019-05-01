@@ -25,29 +25,26 @@ namespace MonteCarloTest
 
         public int NextMove(Board currentBoard)
         {
-            var sw = Stopwatch.StartNew();
-            Console.WriteLine($"{Name} is Now Thinking ...");
-            var tasks = Enumerable.Range(0, 7).Select(col => SelectAndSimulateAsync(currentBoard, col, MaxSimulation)).ToArray();
-            //var tasks = Enumerable.Range(0, 7).Select(col => (column: col, value: SelectAndSimulate(currentBoard, col, MaxSimulation))).ToArray();
-            Task.WaitAll(tasks);
-            Console.WriteLine($"AI Thinking Time: {sw.ElapsedMilliseconds}ms");
+            List<SimulationResult> results = new List<SimulationResult>();
 
-            return tasks.Where(t => t.Result.Column != -1).OrderByDescending(t => t.Result.Value).First().Result.Column;
+            for(var i = 0; i < 7; i++)
+            {
+                results.Add(SelectAndSimulate(currentBoard, i, MaxSimulation));
+            }
+
+            return results.OrderByDescending(r => r.Value).First().Column;
         }
 
-        private Task<SimulationResult> SelectAndSimulateAsync(Board currentBoard, int col, int limit)
+        private SimulationResult SelectAndSimulate(Board currentBoard, int col, int limit)
         {
-            return new TaskFactory<SimulationResult>().StartNew(() =>
-            {
-                if (!currentBoard.IsValidMove(col))
-                    return new SimulationResult(-1, 0);
+            if (!currentBoard.IsValidMove(col))
+                return new SimulationResult(-1, 0);
 
-                var sum = 0;
-                for (var i = 0; i < limit; i++)
-                    sum += Simulate(currentBoard.MakeMove(col, Identifier));
+            var sum = 0;
+            for (var i = 0; i < limit; i++)
+                sum += Simulate(currentBoard.MakeMove(col, Identifier));
 
-                return new SimulationResult(col, sum);
-            });
+            return new SimulationResult(col, sum);
         }
 
         private short Simulate(Board currentBoard)
