@@ -22,7 +22,8 @@ namespace MonteCarloTest
             BoardState currentState;
             int currentPlayer = 0;
 
-            _currentBoard.Print();
+            PrintState();
+
             do
             {
                 int move;
@@ -34,14 +35,37 @@ namespace MonteCarloTest
                 _currentBoard = _currentBoard.MakeMove(move, _players[currentPlayer].Identifier);
 
                 currentPlayer = (currentPlayer + 1) % 2;
-                _currentBoard.Print();
-                Console.WriteLine(
-                    $"●: {_players[0].Name}\n" +
-                    $"○: {_players[1].Name}\n" +
-                    $"");
-            } while (!(currentState = _currentBoard.DetermineState()).IsOver);
 
-            Console.WriteLine("Winner is " + (currentState.WinnerIdentifier.HasValue ? currentState.WinnerIdentifier.Value ? _players[1].Name : _players[0].Name : "Nobody"));
+                PrintState();
+                currentState = _currentBoard.DetermineState();
+            } while (!currentState.IsOver);
+
+            Console.WriteLine("Winner is " + GetPlayerName(currentState.WinnerIdentifier));
+        }
+
+        public void PrintState()
+        {
+            _currentBoard.Print();
+            Console.WriteLine(
+                $"●: {_players[0].Name}\n" +
+                $"○: {_players[1].Name}\n" +
+                $"");
+        }
+
+        public string GetPlayerName(bool? identifier)
+        {
+            if (!identifier.HasValue)
+                return "Nobody";
+
+            switch(identifier.Value)
+            {
+                case true:
+                    return _players[1].Name;
+                case false:
+                    return _players[0].Name;
+            }
+
+            return "Nobody";
         }
     }
 }
