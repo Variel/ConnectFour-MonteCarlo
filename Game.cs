@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace MonteCarloTest
@@ -15,14 +16,15 @@ namespace MonteCarloTest
             _players[1] = player2;
         }
 
-        public void StartLoop()
+        public IPlayer StartLoop()
         {
             _currentBoard = new Board();
 
             BoardState currentState;
             int currentPlayer = 0;
 
-            _currentBoard.Print();
+            //_currentBoard.Print();
+
             do
             {
                 int move;
@@ -34,14 +36,18 @@ namespace MonteCarloTest
                 _currentBoard = _currentBoard.MakeMove(move, _players[currentPlayer].Identifier);
 
                 currentPlayer = (currentPlayer + 1) % 2;
-                _currentBoard.Print();
-                Console.WriteLine(
-                    $"●: {_players[0].Name}\n" +
-                    $"○: {_players[1].Name}\n" +
-                    $"");
+                //_currentBoard.Print();
+                //Console.WriteLine(
+                //    $"●: {_players[0].Name}\n" +
+                //    $"○: {_players[1].Name}\n" +
+                //    $"");
             } while (!(currentState = _currentBoard.DetermineState()).IsOver);
 
-            Console.WriteLine("Winner is " + (currentState.WinnerIdentifier.HasValue ? currentState.WinnerIdentifier.Value ? _players[1].Name : _players[0].Name : "Nobody"));
+            var winner = (currentState.WinnerIdentifier.HasValue
+                ? currentState.WinnerIdentifier.Value ? _players[1] : _players[0]
+                : null);
+
+            return winner;
         }
     }
 }

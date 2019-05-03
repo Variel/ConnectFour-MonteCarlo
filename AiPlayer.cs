@@ -16,6 +16,8 @@ namespace MonteCarloTest
         public string Name { get; }
         public bool Identifier { get; }
 
+        public Func<int, int, double> HeuristicFunc { get; } = (win, lose) => win * 2 - lose;
+
         static AiPlayer()
         {
             MaxSimulation = Int32.Parse(ConfigurationManager.AppSettings["AiMaxIteration"]);
@@ -23,14 +25,17 @@ namespace MonteCarloTest
 
         public AiPlayer(string name, bool identifier) => (Name, Identifier) = (name, identifier);
 
+        public AiPlayer(string name, bool identifier, Func<int, int, double> heuristic) : this(name, identifier) =>
+            HeuristicFunc = heuristic;
+
         public int NextMove(Board currentBoard)
         {
-            var sw = Stopwatch.StartNew();
-            Console.WriteLine($"{Name} is Now Thinking ...");
+            //var sw = Stopwatch.StartNew();
+            //Console.WriteLine($"{Name} is Now Thinking ...");
             var tasks = Enumerable.Range(0, 7).Select(col => SelectAndSimulateAsync(currentBoard, col, MaxSimulation)).ToArray();
             //var tasks = Enumerable.Range(0, 7).Select(col => (column: col, value: SelectAndSimulate(currentBoard, col, MaxSimulation))).ToArray();
             Task.WaitAll(tasks);
-            Console.WriteLine($"AI Thinking Time: {sw.ElapsedMilliseconds}ms");
+            //Console.WriteLine($"AI Thinking Time: {sw.ElapsedMilliseconds}ms");
 
             return tasks.Where(t => t.Result.Column != -1).OrderByDescending(t => t.Result.Value).First().Result.Column;
         }
@@ -42,15 +47,25 @@ namespace MonteCarloTest
                 if (!currentBoard.IsValidMove(col))
                     return new SimulationResult(-1, 0);
 
-                var sum = 0;
+                int wins = 0, loses = 0;
                 for (var i = 0; i < limit; i++)
-                    sum += Simulate(currentBoard.MakeMove(col, Identifier));
+                {
+                    switch(Simulate(currentBoard.MakeMove(col, Identifier)))
+                    {
+                        case true:
+                            wins++;
+                            break;
+                        case false:
+                            loses++;
+                            break;
+                    }
+                }
 
-                return new SimulationResult(col, sum);
+                return new SimulationResult(col, HeuristicFunc(wins, loses));
             });
         }
 
-        private short Simulate(Board currentBoard)
+        private bool? Simulate(Board currentBoard)
         {
             Random rnd = new Random((int)DateTime.Now.Ticks);
             BoardState currentState;
@@ -69,7 +84,7 @@ namespace MonteCarloTest
                     check[movement] = true;
 
                     if (check.All(c => c))
-                        return 0;
+                        return null;
 
                 } while (!currentBoard.IsValidMove(movement));
 
@@ -80,12 +95,12 @@ namespace MonteCarloTest
             } while (!(currentState = currentBoard.DetermineState()).IsOver);
 
             if (currentState.WinnerIdentifier == Identifier)
-                return 2;
+                return true;
 
             if (currentState.WinnerIdentifier == null)
-                return 0;
+                return null;
 
-            return -1;
+            return false;
         }
     }
 }

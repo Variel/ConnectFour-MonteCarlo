@@ -8,8 +8,8 @@ namespace MonteCarloTestNet
     public class SimulationResult
     {
         public int Column { get; set; }
-        public int Value { get; set; }
+        public double Value { get; set; }
 
-        public SimulationResult(int col, int val) => (Column, Value) = (col, val);
+        public SimulationResult(int col, double val) => (Column, Value) = (col, val);
     }
 }
